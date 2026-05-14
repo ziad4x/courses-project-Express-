@@ -32,12 +32,13 @@ const getUserById = asyncWrapper(
 )
 const createUser = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, email, password } = req.body;
+        const { name, email, password, type } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            type: type ?? "student"
         })
         await newUser.save();
         return res.status(201).json({
@@ -51,12 +52,13 @@ const updateUser = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
 
         const userId = req.params.id;
-        const { name, email, password } = req.body;
+        const { name, email, password, type } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.findByIdAndUpdate(userId, {
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            type: type ?? "student"
         }, { new: true });
         if (!user) {
             return res.status(404).json({
@@ -95,4 +97,4 @@ export {
     createUser,
     updateUser,
     deleteUser
-};
+};
