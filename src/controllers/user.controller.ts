@@ -4,7 +4,9 @@ import asyncWrapper from "../middlewares/asyncWrapper";
 import bcrypt from "bcryptjs";
 const getAllUsers = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
-        const users = await User.find();
+        const users = await User.find({}, {
+            __v: false
+        });
         return res.status(200).json({
             success: true,
             message: "success",
@@ -16,7 +18,9 @@ const getAllUsers = asyncWrapper(
 const getUserById = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
         const userId = req.params.id;
-        const user = await User.findById(userId);
+        const user = await User.findById(userId, {
+            __v: false
+        });
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -41,35 +45,39 @@ const createUser = asyncWrapper(
             type: type ?? "student"
         })
         await newUser.save();
+        const userObject = newUser.toObject();
+        const { __v, ...userWithoutV } = userObject as typeof userObject & { __v?: number };
         return res.status(201).json({
             success: true,
             message: "success",
-            data: newUser
-        })
+            data: userWithoutV
+        });
     }
 )
 const updateUser = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
 
         const userId = req.params.id;
-        const { name, email, password, type } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const { name, email, type } = req.body;
+        // const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.findByIdAndUpdate(userId, {
             name,
             email,
-            password: hashedPassword,
+            // password: hashedPassword,
             type: type ?? "student"
-        }, { new: true });
+        }, { returnDocument: "after" });
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "user not found",
             })
         }
+        const userObject = user.toObject();
+        const { __v, ...userWithoutV } = userObject as typeof userObject & { __v?: number };
         return res.status(200).json({
             success: true,
             message: "success",
-            data: user
+            data: userWithoutV
         })
     }
 )
@@ -86,8 +94,8 @@ const deleteUser = asyncWrapper(
         }
         return res.status(200).json({
             success: true,
-            message: "success",
-            data: user
+            message: "user deleted successfully",
+            // data: user
         })
     }
 )

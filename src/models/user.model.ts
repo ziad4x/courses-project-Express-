@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
+        select: false
     },
     type: {
         type: String,
@@ -21,6 +22,6 @@ const userSchema = new mongoose.Schema({
         default: "student"
     }
 
-});
+}, { timestamps: true, versionKey: false });
 
 export const User = mongoose.model('User', userSchema);
