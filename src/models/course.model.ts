@@ -47,6 +47,7 @@ const courseSchema = new mongoose.Schema({
     course_id: {
         type: String,
         required: true
-    }
+    },
 
 })
+export const Course = mongoose.model("Course", courseSchema);
