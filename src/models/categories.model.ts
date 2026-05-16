@@ -4,6 +4,10 @@ const categorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    slug: {
+        type: String,
+        required: true
+    },
     description: {
         type: String,
         required: true
@@ -14,11 +18,13 @@ const categorySchema = new mongoose.Schema({
     },
     number_of_students: {
         type: Number,
-        required: true
+        required: false,
+        default: 0
     },
     number_of_courses: {
         type: Number,
-        required: true
+        required: false,
+        default: 0
     },
 
 
