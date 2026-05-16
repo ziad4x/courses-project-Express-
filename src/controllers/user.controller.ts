@@ -121,10 +121,13 @@ const deleteUser = asyncWrapper(
         const userId = req.params.id;
         const user = await User.findByIdAndDelete(userId);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "user not found",
-            })
+            return next(
+                new AppError({
+                    message: "user not found",
+                    statusCode: 404,
+                    status: "fail"
+                })
+            );
         }
         return res.status(200).json({
             success: true,
