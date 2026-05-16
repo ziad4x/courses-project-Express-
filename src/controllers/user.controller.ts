@@ -71,7 +71,29 @@ const updateUser = asyncWrapper(
 
         const userId = req.params.id;
         const { name, email, type } = req.body;
+
         // const hashedPassword = await bcrypt.hash(password, 10);
+        const isUserExist = await User.findById(userId);
+        if (!isUserExist) {
+            return next(
+                new AppError({
+                    message: "user not found",
+                    statusCode: 404,
+                    status: "fail"
+                })
+            );
+        }
+        const isEmailExist = await User.findOne({ email });
+        console.log(isEmailExist?._id.toString())
+        if (isEmailExist && isEmailExist._id.toString() !== userId) {
+            return next(
+                new AppError({
+                    message: "email already exists",
+                    statusCode: 409,
+                    status: "fail"
+                })
+            );
+        }
         const user = await User.findByIdAndUpdate(userId, {
             name,
             email,
