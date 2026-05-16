@@ -2,6 +2,8 @@ import { User } from "../models/user.model";
 import { Request, Response, NextFunction } from "express";
 import asyncWrapper from "../middlewares/asyncWrapper";
 import bcrypt from "bcryptjs";
+import errorHandler from "../middlewares/errorHandler";
+import AppError from "../utils/AppError";
 const getAllUsers = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
         const users = await User.find({}, {
@@ -37,6 +39,16 @@ const getUserById = asyncWrapper(
 const createUser = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
         const { name, email, password, type } = req.body;
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return next(
+                new AppError({
+                    message: "Email already exists",
+                    statusCode: 409,
+                    status: "fail"
+                })
+            );
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({
             name,
