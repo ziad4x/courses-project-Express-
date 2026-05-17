@@ -6,7 +6,7 @@ const getAllCategories = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
         const categories = await Category.find({}, {
             __v: false
-        });
+        }).populate("courses")
         return res.status(200).json({
             message: "success",
             data: categories
@@ -17,7 +17,7 @@ const getCategoryById = asyncWrapper(
     async (req: Request, res: Response, next: NextFunction) => {
         const category = await Category.findById(req.params.id, {
             __v: false
-        });
+        }).populate("courses");
         if (!category) {
             return next(
                 new AppError({
@@ -106,11 +106,8 @@ const deleteCategory = asyncWrapper(
                 })
             )
         }
-        const categoryObject = category.toObject();
-        const { __v, ...categoryWithoutV } = categoryObject as typeof category & { __v?: number };
         return res.status(200).json({
-            message: "success",
-            data: categoryWithoutV
+            message: "deleted successfully",
         });
     }
 );
