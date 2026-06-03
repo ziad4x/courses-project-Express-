@@ -37,5 +37,6 @@ const upload = multer({
 });
 router.post("/register", upload.single("photo"), authController.register);
 router.post("/login", authController.login);
-
+router.post("/verify-email", authController.verifyEmail);
+router.post("/resend-otp", authController.resendOtp);
 export default router;
