@@ -85,7 +85,8 @@ const getAllCourses = asyncWrapper(
     })
       .sort(sort)
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .populate("lessons");
     const total = await Course.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
     return res.status(200).json({
@@ -108,7 +109,7 @@ const getCourseById = asyncWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
     const course = await Course.findById(req.params.id, {
       __v: false,
-    });
+    }).populate("lessons");
     if (!course) {
       return next(
         new AppError({
@@ -196,7 +197,7 @@ const updateCourse = asyncWrapper(
         duration,
       },
       { new: true },
-    );
+    ).populate("lessons");
     if (!course) {
       return res.status(404).json({
         message: "course not found",
