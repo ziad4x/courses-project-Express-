@@ -19,6 +19,7 @@ const registerAdmin = async (
       email,
       password: hashedPassword,
       type: "admin",
+      isVerified: true,
     });
     const user = new User({
       name,
@@ -26,6 +27,7 @@ const registerAdmin = async (
       password: hashedPassword,
       token: jwtToken,
       type: "admin",
+      isVerified: true,
     });
     await user.save();
     const userObj = user.toObject() as any;
@@ -57,6 +59,7 @@ const loginAdmin = async (req: Request, res: Response) => {
       email: user.email,
       password: user.password,
       type: user.type,
+      isVerified: true,
     });
     user.token = jwtToken;
     await user.save();

@@ -57,4 +57,11 @@ const courseSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false },
 );
+courseSchema.virtual("lessons", {
+  ref: "Lesson",
+  localField: "_id",
+  foreignField: "course",
+});
+courseSchema.set("toJSON", { virtuals: true });
+courseSchema.set("toObject", { virtuals: true });
 export const Course = mongoose.model("Course", courseSchema);
