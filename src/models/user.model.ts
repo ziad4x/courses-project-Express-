@@ -13,8 +13,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       select: false,
+    },
+    googleId: {
+      type: String,
+      required: false,
+      default: null,
     },
     type: {
       type: String,
@@ -33,6 +38,11 @@ const userSchema = new mongoose.Schema(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
   },
   { timestamps: true, versionKey: false },
