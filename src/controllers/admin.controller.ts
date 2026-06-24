@@ -50,7 +50,7 @@ const loginAdmin = async (req: Request, res: Response) => {
     if (user.type !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password!);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password" });
     }
