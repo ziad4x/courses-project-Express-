@@ -3,6 +3,7 @@ import asyncWrapper from "../middlewares/asyncWrapper";
 import { Course } from "../models/course.model";
 import AppError from "../utils/AppError";
 import { Category } from "../models/categories.model";
+import { User } from "../models/user.model";
 type Filter = {
   sort?: string;
   title?: {
@@ -86,7 +87,8 @@ const getAllCourses = asyncWrapper(
       .sort(sort)
       .skip(skip)
       .limit(limit)
-      .populate("lessons");
+      .populate("lessons")
+      .populate("teacher_id");
     const total = await Course.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
     return res.status(200).json({
@@ -109,7 +111,9 @@ const getCourseById = asyncWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
     const course = await Course.findById(req.params.id, {
       __v: false,
-    }).populate("lessons");
+    })
+      .populate("lessons")
+      .populate("teacher_id");
     if (!course) {
       return next(
         new AppError({
@@ -127,7 +131,8 @@ const getCourseById = asyncWrapper(
 );
 const createCourse = asyncWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, description, category_id, price, duration } = req.body;
+    const { name, description, category_id, price, duration, teacher_id } =
+      req.body;
     const isCategoryExist = await Category.findById(category_id);
     if (!isCategoryExist) {
       return next(
@@ -148,14 +153,26 @@ const createCourse = asyncWrapper(
     //         })
     //     )
     // }
+    const teacherExist = await User.findById(teacher_id);
+    if (!teacherExist) {
+      return next(
+        new AppError({
+          message: "teacher not found",
+          statusCode: 404,
+          status: "fail",
+        }),
+      );
+    }
     const newCourse = new Course({
       title: name,
       description,
       category_id,
       price,
       duration,
+      teacher_id,
     });
     await newCourse.save();
+    await newCourse.populate("teacher_id");
     await Category.findByIdAndUpdate(category_id, {
       $push: {
         courses: newCourse._id,
@@ -184,6 +201,7 @@ const updateCourse = asyncWrapper(
       students,
       price,
       duration,
+      teacher_id,
     } = req.body;
     const course = await Course.findByIdAndUpdate(
       req.params.id,
@@ -195,9 +213,12 @@ const updateCourse = asyncWrapper(
         students,
         price,
         duration,
+        teacher_id,
       },
       { new: true },
-    ).populate("lessons");
+    )
+      .populate("lessons")
+      .populate("teacher_id");
     if (!course) {
       return res.status(404).json({
         message: "course not found",
@@ -215,6 +236,16 @@ const updateCourse = asyncWrapper(
     //     //     number_of_courses: 1
     //     // }
     // })
+    const teacherExist = await User.findById(teacher_id);
+    if (!teacherExist) {
+      return next(
+        new AppError({
+          message: "teacher not found",
+          statusCode: 404,
+          status: "fail",
+        }),
+      );
+    }
     return res.status(200).json({
       message: "success",
       data: courseWithoutV,

@@ -8,19 +8,19 @@ router.get("/:id", courseController.getCourseById);
 router.post(
   "/",
   verifyToken,
-  allowedTo("admin"),
+  allowedTo("admin", "teacher"),
   courseController.createCourse,
 );
 router.put(
   "/:id",
   verifyToken,
-  allowedTo("admin"),
+  allowedTo("admin", "teacher"),
   courseController.updateCourse,
 );
 router.delete(
   "/:id",
   verifyToken,
-  allowedTo("admin"),
+  allowedTo("admin", "teacher"),
   courseController.deleteCourse,
 );
 export default router;

@@ -54,6 +54,11 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    teacher_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true, versionKey: false },
 );

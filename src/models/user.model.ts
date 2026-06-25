@@ -47,5 +47,12 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false },
 );
+userSchema.virtual("courses", {
+  ref: "Course",
+  localField: "_id",
+  foreignField: "teacher_id",
+});
+userSchema.set("toJSON", { virtuals: true });
+userSchema.set("toObject", { virtuals: true });
 
 export const User = mongoose.model("User", userSchema);
