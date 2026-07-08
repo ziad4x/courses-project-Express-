@@ -31,7 +31,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    token: {
+    // token: {
+    //   type: String,
+    //   select: false,
+    // },
+    refreshToken: {
       type: String,
       select: false,
     },

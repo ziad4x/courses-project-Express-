@@ -7,6 +7,8 @@ import generateOtp from "../utils/GenerateOtp";
 import { sendEmail } from "../utils/EmailService";
 import asyncWrapper from "../middlewares/asyncWrapper";
 import AppError from "../utils/AppError";
+import verifyToken from "../middlewares/verfiyToken";
+import { verifyJWT } from "../utils/verifyJWT";
 const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, type } = req.body;
@@ -137,7 +139,7 @@ const resendOtp = asyncWrapper(
 );
 const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.cookies;
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -155,20 +157,112 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password" });
     }
-    const jwtToken = generateToken({
-      username: user.name,
-      email: user.email,
-      password: user.password,
-      type: user.type,
+    const jwtToken = generateToken(
+      {
+        id: user._id,
+        role: user.type,
+      },
+      {
+        expiresIn: "15m",
+      }
+    );
+    const refreshToken = generateToken({
+      id: user._id
+    },
+      {
+        secret: process.env.REFRESH_TOKEN_SECRET,
+        expiresIn: "7d"
+      }
+    )
+    // user.token = jwtToken;
+    res.cookie("accessToken", jwtToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
     });
-    user.token = jwtToken;
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    user.refreshToken = await bcrypt.hash(refreshToken, 10);
     await user.save();
     const userObj = user.toObject() as any;
     delete userObj.password;
-    res.status(200).json({ message: "Login successful", data: userObj });
+    res.status(200).json({ message: "Login successful", data: { userObj } });
   } catch (err: any) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-export default { register, login, verifyEmail, resendOtp };
+
+const handleRefreshToken = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+  const { refreshToken } = req.cookies;
+  if (!refreshToken) {
+    return next(
+      new AppError({
+        message: "refresh token not found",
+        statusCode: 400,
+        status: "failed",
+      }),
+    );
+  }
+
+
+  const payload = await verifyJWT<{ _id: string }>(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+  const user = await User.findById(payload._id).select("+refreshToken")
+  const isRefreshTokenMatch = await bcrypt.compare(refreshToken, user!.refreshToken!)
+  if (!user || !isRefreshTokenMatch) {
+    await User.findByIdAndUpdate(payload._id, {
+      refreshToken: null,
+    });
+    return next(
+      new AppError({
+        message: "invalid refresh token",
+        statusCode: 401,
+        status: "",
+      }),
+    );
+  }
+  const newRefreshToken = generateToken({
+    _id: user!._id,
+    role: user!.type,
+  },
+    {
+      secret: process.env.REFRESH_TOKEN_SECRET,
+      expiresIn: "7d"
+    }
+  )
+  const newAccessToken = generateToken({
+    _id: user!._id,
+    role: user!.type,
+  },
+    {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: "15m"
+    }
+  )
+  res.cookie("accessToken", newAccessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000,
+  });
+  res.cookie("refreshToken", newRefreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+  const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+  user!.refreshToken = hashedNewRefreshToken;
+  await user!.save();
+
+  res.status(200).json({ message: "Token refreshed successfully" });
+
+
+})
+
+export default { register, login, verifyEmail, resendOtp, handleRefreshToken };
