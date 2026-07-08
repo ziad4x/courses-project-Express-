@@ -39,4 +39,5 @@ router.post("/register", upload.single("photo"), authController.register);
 router.post("/login", authController.login);
 router.post("/verify-email", authController.verifyEmail);
 router.post("/resend-otp", authController.resendOtp);
+router.post("/refresh-token", authController.handleRefreshToken);
 export default router;
