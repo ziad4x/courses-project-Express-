@@ -70,7 +70,9 @@ const googleCallback = asyncWrapper(
 
       type: user.type,
     });
-    user.token = accesstoken;
+
+
+    // user.token = accesstoken;
     await user.save();
     res.cookie("accessToken", accesstoken, {
       httpOnly: true,
@@ -85,7 +87,9 @@ const googleCallback = asyncWrapper(
 
         type: user.type,
       },
-      "7d",
+      {
+        expiresIn: "7d",
+      }
     );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,

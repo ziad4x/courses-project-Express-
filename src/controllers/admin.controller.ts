@@ -60,8 +60,28 @@ const loginAdmin = async (req: Request, res: Response) => {
       password: user.password,
       type: user.type,
       isVerified: true,
+    }, {
+      expiresIn: '15m'
     });
-    user.token = jwtToken;
+    const refreshToken = generateToken({
+      _id: user._id
+    }, {
+      expiresIn: '7d'
+    })
+    user.refreshToken = refreshToken;
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+    res.cookie("accessToken", jwtToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 1000 * 60 * 15,
+    });
+    // user.token = jwtToken;
     await user.save();
     const userObj = user.toObject() as any;
     delete userObj.password;
