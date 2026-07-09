@@ -56,7 +56,19 @@ userSchema.virtual("courses", {
   localField: "_id",
   foreignField: "teacher_id",
 });
-userSchema.set("toJSON", { virtuals: true });
-userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", {
+  virtuals: true, transform(doc, ret) {
+    delete ret.password;
+    delete ret.refreshToken;
+    return ret
+  }
+});
+userSchema.set("toObject", {
+  virtuals: true, transform(doc, ret) {
+    delete ret.password;
+    delete ret.refreshToken;
+    return ret
+  }
+});
 
 export const User = mongoose.model("User", userSchema);

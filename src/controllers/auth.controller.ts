@@ -25,12 +25,13 @@ const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       type,
     });
+    console.log("jwtToken", jwtToken)
     const user = new User({
       name,
       email,
       password: hashedPassword,
       type,
-      token: jwtToken,
+
       photo: photo?.path,
       isVerified: false,
     });
@@ -48,6 +49,7 @@ const register = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "User created successfully", data: user });
   } catch (err: any) {
+    console.log(err)
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -139,8 +141,9 @@ const resendOtp = asyncWrapper(
 );
 const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.cookies;
+    const { email, password } = req.body;
     const user = await User.findOne({ email }).select("+password");
+    console.log(user)
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
@@ -160,14 +163,15 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     const jwtToken = generateToken(
       {
         id: user._id,
-        role: user.type,
+        type: user.type,
       },
       {
         expiresIn: "15m",
       }
     );
     const refreshToken = generateToken({
-      id: user._id
+      id: user._id,
+      type: user.type,
     },
       {
         secret: process.env.REFRESH_TOKEN_SECRET,
