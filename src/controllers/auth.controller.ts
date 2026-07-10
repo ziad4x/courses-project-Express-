@@ -7,8 +7,8 @@ import generateOtp from "../utils/GenerateOtp";
 import { sendEmail } from "../utils/EmailService";
 import asyncWrapper from "../middlewares/asyncWrapper";
 import AppError from "../utils/AppError";
-import verifyToken from "../middlewares/verfiyToken";
 import { verifyJWT } from "../utils/verifyJWT";
+import crypto from "crypto";
 const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, type } = req.body;
@@ -191,7 +191,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    user.refreshToken = await bcrypt.hash(refreshToken, 10);
+    user.refreshToken = await crypto.createHash("sha256").update(refreshToken).digest("hex");
     await user.save();
     const userObj = user.toObject() as any;
     delete userObj.password;
@@ -268,5 +268,34 @@ const handleRefreshToken = asyncWrapper(async (req: Request, res: Response, next
 
 
 })
+const logout = asyncWrapper(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { refreshToken } = req.cookies
+    if (!refreshToken) {
+      return next(
+        new AppError({
+          message: "refresh token not found",
+          statusCode: 400,
+          status: "failed",
+        }),
+      );
+    }
+    const user = await User.findOne({ refreshToken })
+    if (!user) {
+      return next(
+        new AppError({
+          message: "invalid refresh token",
+          statusCode: 401,
+          status: "",
+        }),
+      );
+    }
+    user.refreshToken = null
+    await user.save()
+    res.clearCookie("accessToken")
+    res.clearCookie("refreshToken")
+    res.status(200).json({ message: "Logout successful" })
+  }
+)
 
-export default { register, login, verifyEmail, resendOtp, handleRefreshToken };
+export default { register, login, verifyEmail, resendOtp, handleRefreshToken, logout };
